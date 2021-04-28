@@ -15,6 +15,10 @@
     <property name="src.dir" value="src"/>
     <property name="projectHome" location="." />
 	<property name="build" location="build"/>
+	
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
 		   
 	
   	<target name="init">
@@ -27,7 +31,7 @@
   	<target name="compile" depends="init"
 		description="compile the source">
 		<!-- Compile the Java code from ${src} into ${build} -->
-		<javac srcdir="${src}" destdir="${build}"/>
+		<javac srcdir="${src.dir}" destdir="${build}" classpathref="classpath"/>
   	</target>
 
   	<target name="clean"
