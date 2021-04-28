@@ -13,6 +13,9 @@
  * limitations under the License.
  *****************************************************************************/
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -23,8 +26,14 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Calendar;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.UrlBase64;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
 
 
 public class gcpDevice {
@@ -47,40 +56,93 @@ public class gcpDevice {
 		this.deviceId = deviceID;
 		this.privateKey = privateKey;
 		
-		//if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+		if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
 		    Security.addProvider(new BouncyCastleProvider());
-		//}
+		}
 		}
 	
 	private String _CreateJWT() throws
 		NoSuchAlgorithmException, InvalidKeySpecException, 
 		InvalidKeyException, SignatureException {
-		  String payload = "{\"iat\":" + (int) this.jwt_iat
-				    + ",\"exp\":" + (int) this.jwt_exp_time
-				    + ",\"aud\":\"" + this.projectID + "\"}";
-
+		
 		  // header: base64_encode("{\"alg\":\"ES256\",\"typ\":\"JWT\"}") + "."
-		  String header_payload_base64 =
-			      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9." + UrlBase64.encode(payload.getBytes());
-
-			PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(this.privateKey.getBytes());  	
+		
+		String jwt_construction = "";
+		
+		String header_payload_base64 =
+		//	    "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.";
+		//		This is the hard coded for RS256
+				"eyJhbGciOiAiUlMyNTYiLCJ0eXAiOiAiSldUIn0.";
+		
+		String payload_str = "{\"iat\":" + (int) this.jwt_iat
+					+ ",\"exp\":" + (int) this.jwt_exp_time
+				    + ",\"aud\":\"" + this.projectID + "\"}";		  
+		  
+		ByteArrayOutputStream payload_base64 = new ByteArrayOutputStream();
+		  
+		try {
+			UrlBase64.encode(payload_str.getBytes(),payload_base64);
+			payload_str = payload_base64.toString();
+			int trimloc = payload_str.indexOf(".");
+			if(trimloc > 0) {
+				payload_str = payload_str.substring(0,trimloc);
+			}
+			} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			}
+		  
+		jwt_construction = header_payload_base64 + payload_str;
+	        
+	        PrivateKey prikey;
+	        Signature sig = Signature.getInstance("SHA256withRSA");
+			//RSADigestSigner signer = new RSADigestSigner(new SHA256Digest());
+	        //AsymmetricKeyParameter keyparam;
+	        byte[] signat = {};
 			
-	        KeyFactory kf = KeyFactory.getInstance("RSA");
-	        PrivateKey privateKey = kf.generatePrivate(spec);
-	        
-	        
-	        Signature sig = Signature.getInstance("SHA256withECDSA");
-	        sig.initSign(privateKey);
-	        sig.update(header_payload_base64.getBytes());
+			try {
+				prikey = getPemPrivateKey(this.privateKey);
+		        sig.initSign(prikey);
+		        sig.update(jwt_construction.getBytes());
+			//	signer.init(true, getPemPrivateParameter(this.privateKey));
+			//	signer.update(jwt_construction.getBytes(), 0, jwt_construction.length());
+			//	try {
+			//	    signat = signer.generateSignature();
+			//	} catch (Exception ex) {
+			//	    throw new RuntimeException("Cannot generate RSA signature. " + ex.getMessage(), ex);
+			//	}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        byte [] signature = sig.sign();
 	        
-		return header_payload_base64 + "." + UrlBase64.encode(signature);
+			ByteArrayOutputStream signature_base64 = new ByteArrayOutputStream();
+			
+			try {
+				//UrlBase64.encode(signat,signature_base64);	Known working.
+				UrlBase64.encode(signature,signature_base64);
+				payload_str = signature_base64.toString();
+				int trimloc = payload_str.indexOf(".");
+				if(trimloc > 0) {
+					payload_str = payload_str.substring(0,trimloc);
+				}
+				} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+				}
+			
+	        
+		return jwt_construction + "." + payload_str;
 	}
 	
-	//NEED TO CONFIRM OPERATION OF THESE TWO FUNCTIONS. SPECIFICALLY THE CURRENT TIME
-	//jwt_exp_time should be expire time in seconds from EPOCH / UTC. 
-	//current time is the earliest the jwt would be valid.
-	
+	/**
+	   *
+	   * The method returns a signed jwt at the the current expire time range
+	   * of 24 hours, or whatever was most recently set. 
+	   * @return signed jwt
+	   *
+	*/
 	public String createJWT() {
 		this.jwt_iat = (Calendar.getInstance().getTimeInMillis()/1000L);
 		this.jwt_exp_time = this.jwt_iat + this.jwt_exp_secs;
@@ -100,8 +162,15 @@ public class gcpDevice {
 			e.printStackTrace();
 		}
 		  return jwt;
-		}
+	}
 
+	/**
+	   *
+	   * The method returns a signed jwt at the the specified exp_in_secs
+	   * @param exp_in_secs the specified lenth of time in seconds before the token should expire
+	   * @return the signed jwt
+	   *
+	*/
 	public String createJWT(int exp_in_secs) {
 		this.jwt_exp_secs = exp_in_secs;
 		  try {
@@ -120,11 +189,8 @@ public class gcpDevice {
 			e.printStackTrace();
 		}
 		  return jwt;
-		}
+	}
 	
-	//THESE FUNCTIONS ARE NOT TESTED BUT TEMPORARILY ASSUMPED TO BE CORRECT. 
-	//Not all of these functions are needed today. They mirror the functionality
-	//of the google iot cpp classes for arduino projects. 
 	
 	public String getJWT() {
 		if(this.jwt_exp_time <= (Calendar.getInstance().getTimeInMillis()/1000L)) {
@@ -201,8 +267,20 @@ public class gcpDevice {
 		return this.endPoint;
 	}
 	
+	private static PrivateKey getPemPrivateKey(String mKey) throws Exception {
+	    PEMParser pemParser = new PEMParser(new StringReader(mKey));
+	    final PEMKeyPair pemKeyPair = (PEMKeyPair) pemParser.readObject();
+	    final byte[] encoded = pemKeyPair.getPrivateKeyInfo().getEncoded();
+	    KeyFactory kf = KeyFactory.getInstance("RSA");
+	    return kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
+
+	}
 	
-	
-	
-	
+	private static AsymmetricKeyParameter getPemPrivateParameter(String mKey) throws Exception {
+	    PEMParser pemParser = new PEMParser(new StringReader(mKey));
+	    final PEMKeyPair pemKeyPair = (PEMKeyPair) pemParser.readObject();
+		AsymmetricKeyParameter privKey = PrivateKeyFactory.createKey(pemKeyPair.getPrivateKeyInfo());
+	    return privKey;
+
+	}
 }
