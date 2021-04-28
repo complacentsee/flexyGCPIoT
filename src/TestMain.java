@@ -14,89 +14,58 @@
  *****************************************************************************/
 
 import java.util.Random;
-import com.ewon.ewonitf.EWException;
-import com.ewon.ewonitf.MqttClient;
-import com.ewon.ewonitf.MqttMessage;
 
 public class TestMain {
-	
-    class EwonMqtt extends MqttClient {
-        public EwonMqtt(String endpoint, String clientID) throws Exception {
-            super(clientID, endpoint);
-            this.setOption("port", "8883");
-            this.setOption("log", "1");
-            this.setOption("keepalive", "30");
-            this.setOption("cafile", "/usr/root-CA.crt");
-            this.setOption("certfile", "/usr/my.cert.pem");
-            this.setOption("keyfile", "/usr/my.private.key");
-            this.connect();
-        }
-
-        public void callMqttEvent(int arg0) {
-        }
-    }
-    
-    class gcpIoTMqtt extends MqttClient {
-        public gcpIoTMqtt(gcpDevice device) throws Exception {
-        	super(device.getClientId(), device.getEndPoint());
-            this.setOption("username", "");
-            this.setOption("password", device.getJWT());
-            this.setOption("port", "8883");
-            this.setOption("log", "1");
-            this.setOption("keepalive", "30");
-            this.setOption("cafile", "/usr/root-CA.crt");
-            this.connect();
-        }
-        public void callMqttEvent(int arg0) {
-        }
-    }
     
     public  void runTest() {
     	//CONFIGURE ME
-    	String projectID = "";
-    	String region = "";
-    	String registryId ="";
-    	String deviceId ="";
-    	String privateKey="";
-    	
+    	String projectID = "grafana-freenas-complacentsee";
+    	String region = "us-central1";
+    	String registryId ="anjiversary";
+    	String deviceId ="esp32.gcp.iot.99";
+    	String privateKey=
+    					"-----BEGIN RSA PRIVATE KEY-----\n"
+    					+ "MIIEpQIBAAKCAQEA50vAZp24ovZiMWu4h2agxqPTXxlBNZPOq6DiulUkcZuc4SdH\n"
+    					+ "n9wDxljO8RCIaaf9vl6A1aV5cMiIHzvmoFI1Bm6Kn8QeZQw6TpPjmdCQrYEzvs1N\n"
+    					+ "3RC9AdtxB1ozQ07rgKEZzKHuBZwi+dYlJ14qyExPR0y/CHrOZmSUEb5Lk/LfvHWE\n"
+    					+ "r9oi5jMvO2+2RLSjsTdaYwFD99GBzeejBAvg+i6pXn8eYgdN4Nyy6SicDzZaAacS\n"
+    					+ "bmv7MWGYJa1EvC1plWO/nWsSuCKvxSo7InXikqOzAJN8L2N/E2kLhM708pI/u6bw\n"
+    					+ "HAU4XJvOAYncDxhGr41vPSQd2Fj3QZ7fRX4TnwIDAQABAoIBAQCNBmQGbU5BloZi\n"
+    					+ "abK2Y/3Nf+AGEOjwmPGfNdZoFDfHSUFLCt8h+k0W59ktpI34FeSh6Q8WtPEpsitF\n"
+    					+ "GAnTYKxSAp5lMXfy1pTKimNwynkcQTXitV0vV+BWPI1bFUVCWeE/qXqIiYcORpgQ\n"
+    					+ "yuAWc9UUEWsZJxMnQXGNfu/FLcj5KCjw/q1E4rHu5ptk8LsDeZlgXrM3GRliAwtl\n"
+    					+ "zEpD80ATPD2iOnXkwKdF4TZXjO0Ai6/QjH3NGSFRdOjUNTAtx03D0e+LqT/ihj3X\n"
+    					+ "Qy+f2r00ItlRVeBeDKrBCpS+w0FjHlCctBEPhAG6r2DZJ/3RioqJka2BK1SVtveO\n"
+    					+ "vdI7eljJAoGBAP8GijnJQ5P5JeJYbp2QZ9mNrdwOVYIBh9G7hFeRoS41e8kY4YTB\n"
+    					+ "Pku7zxOlxt2YXxnFWhQQSZpbbb0HZlkWjWlTyRzqeN0lfiOHUoNgnwJpk8S3lEDC\n"
+    					+ "ooLQVIT9WZS5bG0ie72rSGKvXXLtbttlg3k2iqMQOUrjwfuim3NfAPZtAoGBAOgt\n"
+    					+ "//VelVX3wP1lnt1qpw18HsTmfsSGI14TP5PkD0A1nMl8t8hwghmveg7pdsRN0lJs\n"
+    					+ "GsbWlafFm6K7uypIwJgY9nO90B9yLGjXkWtVPuezpHBCqN+eg3BTRHX3SP1+4pgH\n"
+    					+ "hHr/V0n9a8tMh3Wi8rqSl0nao4iJVXr8Takz7xq7AoGBAO8NOlSgjHAQg6qAKnAY\n"
+    					+ "BMCxRd+YsB6FQMMgexV6tROTns0KPZsraTGkgp9wLdFaGwsVKzLTcar3OQ6P+ShZ\n"
+    					+ "M4UfvM0WHOVvV6YGGxp7X5HrVVB4pMdvqtXkYtWmhmoaxcAnKsbH37phl787QUb3\n"
+    					+ "CR5+OcZQVuQUSqmN6xliXIyhAoGBAKH3ZPUwlBCykqiyeU6QlhSsH3LQMGK8CHQa\n"
+    					+ "DWIH2DO8srFEFZj4E2oDpaw9ZSKv/yaMT2miTCgLi/TL7VckBWaVE2fOZB9rsFs6\n"
+    					+ "9jDf+M/925qMhe3pUFvNWpbIeNyN5ViU9fAvrB7rcIUTz/NaRuWsWWml4irfUwhG\n"
+    					+ "dY6xsfz9AoGAO99Djje4fNbvHOXwBLgeUDyc7hhrfJ2tCJSCq1YzN7flqJMKwpcL\n"
+    					+ "vccRw4vNNX/Fb5WdhbiI8Xzm8/lE1x5k0GzArZMoFzncO8DbPL2iXI4xaJxRpzzf\n"
+    					+ "XZq2J5UP0KCBzxE/Sd+wP2ZsbCL/xKGDjOgDpDXJ9vWfAo8W48VPgKc=\n"
+    					+ "-----END RSA PRIVATE KEY-----";
+
     	gcpDevice device = new gcpDevice(projectID,region,registryId,deviceId,privateKey);
-    	gcpIoTMqtt client = null;
     	
-        try {
-            client = new gcpIoTMqtt(device);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    	String jwt = device.createJWT();
+    	System.out.println(jwt);
         
-        String json = "";
-        Random r = new Random();
-        for(int i = 0; i < 6; i++) {
-            json = "{";
-            for(int j = 0; j < 20; j++) {
-                json += "\"tag" + j + "\": " + r.nextInt(1000);
-                if(j < 19)
-                    json += ", ";
-            }
-            json += "}";
-            
-            MqttMessage message = new MqttMessage(device.getSendTelemetryPath(), json);
-            try {
-                client.publish(message, 0, false);
-            } catch (EWException e) {
-                e.printStackTrace();
-            }
-            
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
-    }
 
     public static void main(String[] args) {
-        TestMain t = new TestMain();
-        t.runTest();
+  
+        for (int i = 1; i <= 1; ++i) {
+            TestMain t = new TestMain();
+            t.runTest();
+        }
+    	
     }
 
 }
