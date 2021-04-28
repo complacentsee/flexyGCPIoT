@@ -19,10 +19,10 @@ public class TestMain {
     
     public  void runTest() {
     	//CONFIGURE ME
-    	String projectID = "grafana-freenas-complacentsee";
+    	String projectID = "flexyGCPIoT";
     	String region = "us-central1";
-    	String registryId ="anjiversary";
-    	String deviceId ="esp32.gcp.iot.99";
+    	String registryId ="sampleregistryname";
+    	String deviceId ="flexyfakeline1";
     	String privateKey=
     					"-----BEGIN RSA PRIVATE KEY-----\n"
     					+ "MIIEpQIBAAKCAQEA50vAZp24ovZiMWu4h2agxqPTXxlBNZPOq6DiulUkcZuc4SdH\n"
