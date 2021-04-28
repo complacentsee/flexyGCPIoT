@@ -13,6 +13,7 @@
 	
 	
     <property name="src.dir" value="src"/>
+    <property name="lib.dir" value="lib"/>
     <property name="projectHome" location="." />
 	<property name="build" location="build"/>
 	
