@@ -13,14 +13,23 @@
 	
 	
     <property name="src.dir" value="src"/>
-    <property name="lib.dir" value="lib"/>
+    <property name="test.dir" value="test"/>
     <property name="projectHome" location="." />
 	<property name="build" location="build"/>
 	
-    <path id="classpath">
-        <fileset dir="${lib.dir}" includes="**/*.jar"/>
-    </path>
-		   
+	<path id="build.classpath">
+	  <fileset dir="lib">
+	    <include name="**/*.jar"/>
+	    <include name="**/*.zip"/>
+	  </fileset>
+	</path>
+	
+   	<path id = "classpath.test">
+      	<pathelement location = "lib/org.junit_4.13.0.v20200204-1500.jar" />
+      	<pathelement location = "${test.dir}" />
+      	<pathelement location = "${src.dir}" />
+      	<path refid = "classpath.base" />
+   	</path>
 	
   	<target name="init">
 		<!-- Create the time stamp -->
@@ -32,7 +41,10 @@
   	<target name="compile" depends="init"
 		description="compile the source">
 		<!-- Compile the Java code from ${src} into ${build} -->
-		<javac srcdir="${src.dir}" destdir="${build}" classpathref="classpath"/>
+		<javac destdir="${build}">
+  	    	<src path="${src.dir}"/>
+  	    	<classpath refid="build.classpath"/>
+  	  	</javac>
   	</target>
 
   	<target name="clean"
@@ -44,5 +56,27 @@
 	<target name="buildjar">
 		<jar destfile="${projectHome}/build/${ProjectName}.jar" basedir="${projectHome}/bin" />
     </target>  
+	
+	
+	<target name="test_gcpDevice" >
+
+	  <junit printsummary="yes" haltonfailure="yes">
+
+	    <classpath>
+	      <pathelement location="${project.class.path}"/>
+	      <pathelement location="${build.tests}"/>
+	      <pathelement path="${java.class.path}"/>
+	    </classpath>
+
+	    <test name="gcpDeviceTest"
+	             haltonfailure="no" outfile="result">
+
+	      <formatter type="plain"/>
+	      <formatter type="xml"/>
+
+	    </test>
+
+	  </junit>
+	</target>
 	
 </project>

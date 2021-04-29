@@ -244,7 +244,7 @@ public class gcpDevice {
 	
 	
 	public String getSetStatePath() {
-		return this.getBasePath() + "setState";
+		return this.getBasePath() + ":setState";
 	}
 	
 	public void setJwtExpSecs(long exptime) {
