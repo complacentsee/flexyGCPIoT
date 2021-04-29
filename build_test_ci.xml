@@ -1,0 +1,57 @@
+  <project name="Andrew's Assignment 3 JUnit w/ Ant" basedir="." default="test">
+  
+  
+    <!-- set global properties for this build -->
+    <property name="src.dir" location="src"/>
+    <property name="src.dir.main" location="src"/>
+    <property name="src.dir.test" location="test"/>
+    <property name="dest.dir" location="build"/>
+    <property name="report.dir" location="report"/>
+    <property name="dest.dir.classes" location="build/classes"/>
+    <property name="lib.dir" location="lib"/>
+    
+    <path id="build.class.path">
+      <fileset dir="${lib.dir}">
+        <include name="*.jar"/>
+      </fileset>
+    </path>
+    
+    <path id="test.class.path">
+      <pathelement location="${dest.dir.classes}"/>
+    </path>
+    
+    <target name="test" depends="compile">
+      <junit printsummary="yes" haltonfailure="no">
+        <test name="gcpDeviceTest"
+        	haltonfailure="no" todir="${report.dir}" outfile="result">
+            <formatter type="xml" usefile="true"/>
+        </test>
+        <classpath refid="build.class.path"/>
+        <classpath refid="test.class.path"/>
+
+      </junit>
+    </target>
+    
+    <target name="compile" depends="clean,prepare">
+      <javac srcdir="${src.dir.main}"
+             destdir="${dest.dir.classes}"
+             includeAntRuntime="false">
+        <classpath refid="build.class.path"/>
+      </javac>
+      <javac srcdir="${src.dir.test}"
+             destdir="${dest.dir.classes}"
+             includeAntRuntime="false">
+        <classpath refid="build.class.path"/>
+      </javac>
+    </target>
+    
+    <target name="prepare">
+      <mkdir dir="${dest.dir}"/>
+      <mkdir dir="${dest.dir.classes}"/>
+      <mkdir dir="${report.dir}"/>
+    </target>
+    
+    <target name="clean">
+      <delete dir="${dest.dir}"/>
+    </target>
+</project>
