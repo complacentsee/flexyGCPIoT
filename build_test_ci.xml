@@ -1,74 +1,56 @@
-<project default="junit">
+  <project name="Andrew's Assignment 3 JUnit w/ Ant" basedir="." default="test">
+  
+  
+    <!-- set global properties for this build -->
+    <property name="src.dir" location="src"/>
+    <property name="src.dir.main" location="src"/>
+    <property name="src.dir.test" location="test"/>
+    <property name="dest.dir" location="build"/>
+    <property name="report.dir" location="report"/>
+    <property name="dest.dir.classes" location="build/classes"/>
+    <property name="lib.dir" location="lib"/>
+    
+    <path id="build.class.path">
+      <fileset dir="${lib.dir}">
+        <include name="*.jar"/>
+      </fileset>
+    </path>
+    
+    <path id="test.class.path">
+      <pathelement location="${dest.dir.classes}"/>
+    </path>
+    
+    <target name="test" depends="compile">
+      <junit printsummary="yes" haltonfailure="no">
+        <test name="gcpDeviceTest"
+        	haltonfailure="no" todir="${report.dir}" outfile="result">
+            <formatter type="plain" usefile="false"/>
+        </test>
+        <classpath refid="build.class.path"/>
+        <classpath refid="test.class.path"/>
 
-    <property name="projectHome" location="." />
-    <property name="src.dir" value="src"/>
-    <property name="test.dir" value="test"/>
-	<property name="build" location="build"/>
-	<property name="test.build" location="build/test"/>
-
-	<path id="build.classpath">
-	  <fileset dir="lib">
-	    <include name="**/*.jar"/>
-	    <include name="**/*.zip"/>
-	  </fileset>
-	</path>
-	
-	<path id = "classpath.test">
-      	<pathelement location = "lib/junit.jar" />
-      	<pathelement location = "${test.dir}" />
-      	<pathelement location = "${src.dir}" />
-      	<path refid = "classpath.base" />
-   	</path>
-
-	<target name="junit" depends="compile">
-
-    	<junit printsummary="yes" haltonfailure="no">
-
-        	<classpath refid="${test.dir}" />
-        	<classpath location="${test.dir}" />
-        	<classpath location="${build.dir}" />
-        	<classpath location="${test.build}" />
-                        
-        <!-- Make sure these two libraries are included -->
-        	<classpath location="lib/junit.jar" />
-            
-        	<test name="gcpDeviceTest.testGcpDevice" 
-            	haltonfailure="no" todir="${report.dir}" outfile="result">
-            	<formatter type="plain" />
-            	<formatter type="xml" />
-        	</test>
-		</junit>
-  	</target>
-	
-  	<target name="init">
-		<!-- Create the time stamp -->
-		<tstamp/>
-		<!-- Create the build directory structure used by compile -->
-		<mkdir dir="${build}"/>
-  	</target>
-
-  	<target name="compile" depends="init"
-		description="compile the source">
-		<!-- Compile the Java code from ${src} into ${build} -->
-		<javac destdir="${build}">
-  	    	<src path="${src.dir}"/>
-  	    	<classpath refid="build.classpath"/>
-  	  	</javac>
-  	</target>
-  	
-  	<target name="compiletest" depends="init"
-		description="compile the source">
-		<!-- Compile the Java code from ${src} into ${build} -->
-		<javac destdir="${test.build}">
-  	    	<src path="${test.dir}"/>
-  	    	<classpath refid="build.classpath"/>
-  	  	</javac>
-  	</target>
-
-  	<target name="clean"
-		description="clean up">
-		<!-- Delete the ${build} and ${dist} directory trees -->
-		<delete dir="${build}"/>
-  	</target>
-	
+      </junit>
+    </target>
+    
+    <target name="compile" depends="clean,prepare">
+      <javac srcdir="${src.dir.main}"
+             destdir="${dest.dir.classes}"
+             includeAntRuntime="false">
+        <classpath refid="build.class.path"/>
+      </javac>
+      <javac srcdir="${src.dir.test}"
+             destdir="${dest.dir.classes}"
+             includeAntRuntime="false">
+        <classpath refid="build.class.path"/>
+      </javac>
+    </target>
+    
+    <target name="prepare">
+      <mkdir dir="${dest.dir}"/>
+      <mkdir dir="${dest.dir.classes}"/>
+    </target>
+    
+    <target name="clean">
+      <delete dir="${dest.dir}"/>
+    </target>
 </project>
