@@ -6,6 +6,13 @@
 	<property name="build" location="build"/>
 	<property name="test.build" location="build/test"/>
 
+	<path id="build.classpath">
+	  <fileset dir="lib">
+	    <include name="**/*.jar"/>
+	    <include name="**/*.zip"/>
+	  </fileset>
+	</path>
+	
 	<path id = "classpath.test">
       	<pathelement location = "lib/junit.jar" />
       	<pathelement location = "${test.dir}" />
