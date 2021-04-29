@@ -273,7 +273,7 @@ public class gcpDeviceTest extends TestCase {
     					+ "-----END RSA PRIVATE KEY-----";
 
     	gcpDevice device = new gcpDevice(projectID,region,registryId,deviceId,privateKey);
-    	String stateTopic = "/devices/" + deviceId + "/state";
+    	String stateTopic = "/devices/" + deviceId + "/state" + "/FORCE FAILURE";
     	assertEquals(stateTopic,device.getStateTopic());	
 	}
 
