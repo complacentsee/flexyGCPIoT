@@ -1,4 +1,5 @@
 import junit.framework.TestCase;
+import com.complacentsee.flexyGCPIoT.*;
 
 public class gcpDeviceTest extends TestCase {
 	

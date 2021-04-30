@@ -1,13 +1,13 @@
-  <project name="Andrew's Assignment 3 JUnit w/ Ant" basedir="." default="test">
+  <project name="com.complacentsee.flexyGCPIoT.gcpDevice JUnit Tests" basedir="." default="test">
   
   
     <!-- set global properties for this build -->
     <property name="src.dir" location="src"/>
-    <property name="src.dir.main" location="src"/>
+    <property name="src.dir.main" location="src/com/complacentsee/flexyGCPIoT"/>
     <property name="src.dir.test" location="test"/>
     <property name="dest.dir" location="build"/>
     <property name="report.dir" location="report"/>
-    <property name="dest.dir.classes" location="build/classes"/>
+    <property name="dest.dir.classes" location="build"/>
     <property name="lib.dir" location="lib"/>
     
     <path id="build.class.path">
