@@ -1,4 +1,4 @@
-<project default="compile">
+<project name="com.complacentsee.flexyGCPIoT.gcpDevice" default="compile">
 	
 	<!-- ########  Type your Application/Flexy Parameters ######## -->
 	
@@ -12,7 +12,7 @@
 	<property name="HeapSize" value="5M"/>
 	
 	
-    <property name="src.dir" value="src"/>
+    <property name="src.dir" value="src/com/complacentsee/flexyGCPIoT"/>
     <property name="test.dir" value="test"/>
     <property name="projectHome" location="." />
 	<property name="build" location="build"/>
