@@ -23,6 +23,7 @@ public class TestMain {
     	String region = "us-central1";
     	String registryId ="sampleregistryname";
     	String deviceId ="flexyfakeline1";
+    	String privateKeyType = "RSA";
     	String privateKey=
     					"-----BEGIN RSA PRIVATE KEY-----\n"
     					+ "MIIEpQIBAAKCAQEA50vAZp24ovZiMWu4h2agxqPTXxlBNZPOq6DiulUkcZuc4SdH\n"
@@ -51,12 +52,22 @@ public class TestMain {
     					+ "vccRw4vNNX/Fb5WdhbiI8Xzm8/lE1x5k0GzArZMoFzncO8DbPL2iXI4xaJxRpzzf\n"
     					+ "XZq2J5UP0KCBzxE/Sd+wP2ZsbCL/xKGDjOgDpDXJ9vWfAo8W48VPgKc=\n"
     					+ "-----END RSA PRIVATE KEY-----";
-
-    	gcpDevice device = new gcpDevice(projectID,region,registryId,deviceId,privateKey);
     	
+    	String privateECKey=
+    					"-----BEGIN EC PRIVATE KEY-----\n"
+    					+ "MHcCAQEEICKJhmxoVFKgqtmD+7dAJ5eK5AQHFHvVOyOr9ipeC0w5oAoGCCqGSM49\n"
+    					+ "AwEHoUQDQgAEi4gyu7tLWF07EqTmO5rasgc/OcfiPRG8Zbe/7PAMqEEfl8KYe3Jk\n"
+    					+ "ZWz1IJSsvlMnPQGOvyOELi4T9asm+GSZRw==\n"
+    					+ "-----END EC PRIVATE KEY-----";
+
+    	gcpDevice device = new gcpDevice(projectID,region,registryId,deviceId,privateKey,privateKeyType);	
     	String jwt = device.createJWT();
     	System.out.println(jwt);
         
+    	device = new gcpDevice(projectID,region,registryId,deviceId,privateECKey,"EC");	
+    	jwt = device.createJWT();
+    	System.out.println(jwt);
+    	
         }
 
     public static void main(String[] args) {

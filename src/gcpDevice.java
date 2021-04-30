@@ -44,6 +44,7 @@ public class gcpDevice {
 	private String privateKey;
 	private String jwt;
 	private String endPoint = "mqtt.2030.ltsapis.goog";
+	private String privateKeyType;
 	private int jwt_exp_secs = 86400;
 	private long jwt_iat = 0;
 	private long jwt_exp_time = 0;
@@ -55,6 +56,21 @@ public class gcpDevice {
 		this.registryId = registryId;
 		this.deviceId = deviceID;
 		this.privateKey = privateKey;
+		this.privateKeyType = "RSA";
+		
+		if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+		    Security.addProvider(new BouncyCastleProvider());
+		}
+		}
+	
+	//Constructor for gcpJWT 
+	public gcpDevice(String projectID, String region, String registryId, String deviceID, String privateKey, String privateKeyType) {
+		this.projectID = projectID;
+		this.region = region;
+		this.registryId = registryId;
+		this.deviceId = deviceID;
+		this.privateKey = privateKey;
+		this.privateKeyType = privateKeyType;
 		
 		if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
 		    Security.addProvider(new BouncyCastleProvider());
@@ -69,10 +85,13 @@ public class gcpDevice {
 		
 		String jwt_construction = "";
 		
-		String header_payload_base64 =
-		//	    "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.";
-		//		This is the hard coded for RS256
-				"eyJhbGciOiAiUlMyNTYiLCJ0eXAiOiAiSldUIn0.";
+		String header_payload_base64 = null;
+		
+	    if(this.privateKeyType.equals("RSA")) {
+	    	header_payload_base64 = "eyJhbGciOiAiUlMyNTYiLCJ0eXAiOiAiSldUIn0.";
+	    } else if (this.privateKeyType.equals("EC")) {
+	    	header_payload_base64 ="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.";
+	    }
 		
 		String payload_str = "{\"iat\":" + (int) this.jwt_iat
 					+ ",\"exp\":" + (int) this.jwt_exp_time
@@ -95,7 +114,14 @@ public class gcpDevice {
 		jwt_construction = header_payload_base64 + payload_str;
 	        
 	        PrivateKey prikey;
-	        Signature sig = Signature.getInstance("SHA256withRSA");
+	        Signature sig = null;
+	        
+		    if(this.privateKeyType.equals("RSA")) {
+		    	sig = Signature.getInstance("SHA256withRSA");
+		    } else if (this.privateKeyType.equals("EC")) {
+		    	sig = Signature.getInstance("SHA256withECDSA");
+		    }
+	        
 			//RSADigestSigner signer = new RSADigestSigner(new SHA256Digest());
 	        //AsymmetricKeyParameter keyparam;
 	        byte[] signat = {};
@@ -116,6 +142,7 @@ public class gcpDevice {
 				e.printStackTrace();
 			}
 	        byte [] signature = sig.sign();
+	    	System.out.println(signature.length);
 	        
 			ByteArrayOutputStream signature_base64 = new ByteArrayOutputStream();
 			
@@ -267,13 +294,19 @@ public class gcpDevice {
 		return this.endPoint;
 	}
 	
-	private static PrivateKey getPemPrivateKey(String mKey) throws Exception {
+	private PrivateKey getPemPrivateKey(String mKey) throws Exception {
 	    PEMParser pemParser = new PEMParser(new StringReader(mKey));
 	    final PEMKeyPair pemKeyPair = (PEMKeyPair) pemParser.readObject();
 	    final byte[] encoded = pemKeyPair.getPrivateKeyInfo().getEncoded();
-	    KeyFactory kf = KeyFactory.getInstance("RSA");
-	    return kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
-
+	    KeyFactory kf;
+	    if(this.privateKeyType.equals("RSA")) {
+		    kf = KeyFactory.getInstance("RSA");
+		    return kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
+	    } else if (this.privateKeyType.equals("EC")) {
+		    kf = KeyFactory.getInstance("EC");
+		    return kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
+	    }
+		throw new Exception("NO VALID KEY SET");
 	}
 	
 	private static AsymmetricKeyParameter getPemPrivateParameter(String mKey) throws Exception {
