@@ -1,15 +1,15 @@
-<project name="com.complacentsee.flexyGCPIoT.gcpDevice" default="compile">
+<project name="com.complacentsee.flexyGCPIoT.gcpDevice" default="run">
 	
 	<!-- ########  Type your Application/Flexy Parameters ######## -->
 	
 	<!-- The project name -->
-	<property name="ProjectName" value="TestMain"/>
+	<property name="ProjectName" value="com.complacentsee.flexyGCPIoT"/>
 	
 	<!-- The main class to run (where the main function is) -->
 	<property name="MainClass" value="main"/>
 	
 	<!-- The JAVA heapsize -->
-	<property name="HeapSize" value="5M"/>
+	<property name="HeapSize" value="25M"/>
 	
 	
     <property name="src.dir" value="src/com/complacentsee/flexyGCPIoT"/>
@@ -20,7 +20,6 @@
 	<path id="build.classpath">
 	  <fileset dir="lib">
 	    <include name="**/*.jar"/>
-	    <include name="**/*.zip"/>
 	  </fileset>
 	</path>
 	
@@ -31,7 +30,7 @@
       	<path refid = "classpath.base" />
    	</path>
 	
-  	<target name="init">
+  	<target name="init" depends="clean">
 		<!-- Create the time stamp -->
 		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
@@ -49,13 +48,31 @@
 
   	<target name="clean"
 		description="clean up">
-		<!-- Delete the ${build} and ${dist} directory trees -->
 		<delete dir="${build}"/>
+		<delete dir="jar"/>
+		<delete dir="report"/>
   	</target>
 	
-	<target name="buildjar">
-		<jar destfile="${projectHome}/build/${ProjectName}.jar" basedir="${projectHome}/bin" />
-    </target>  
+    <target name="buildjar" depends="compile">
+    	<pathconvert property="mf.classpath" pathsep=" ">
+          <path refid="build.classpath" />
+          <flattenmapper />
+    	</pathconvert>
+    	<copy todir="jar">
+    	  <fileset dir="lib">
+    	    <exclude name="junit*" />
+    	    <include name="*.jar"/>
+    	    <include name="*.zip"/>
+    	  </fileset>
+    	</copy>
+    	<mkdir dir="jar"/>
+        <jar destfile="jar/${ProjectName}.jar" basedir="${build}">
+            <manifest>
+                <attribute name="Main-Class" value="com.complacentsee.flexyGCPIoT.TestMain"/>
+            	<attribute name="Class-Path" value="${mf.classpath}"/>
+            </manifest>
+        </jar>
+    </target>
 	
 	
 	<target name="test_gcpDevice" >
@@ -78,5 +95,9 @@
 
 	  </junit>
 	</target>
+	
+    <target name="run" depends="buildjar">
+        <java jar="jar/${ProjectName}.jar" fork="true"/>
+    </target>
 	
 </project>
