@@ -20,6 +20,7 @@ import java.io.StringReader;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.Signature;
@@ -27,15 +28,10 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Calendar;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.signers.RSADigestSigner;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.UrlBase64;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-
+import org.bouncycastle.util.encoders.UrlBase64;
 
 public class gcpDevice {
 	private String projectID;
@@ -49,7 +45,7 @@ public class gcpDevice {
 	private int jwt_exp_secs = 86400;
 	private long jwt_iat = 0;
 	private long jwt_exp_time = 0;
-	
+
 	//Constructor for gcpJWT 
 	public gcpDevice(String projectID, String region, String registryId, String deviceID, String privateKey) {
 		this.projectID = projectID;
@@ -62,7 +58,7 @@ public class gcpDevice {
 		if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
 		    Security.addProvider(new BouncyCastleProvider());
 		}
-		}
+	}
 	
 	//Constructor for gcpJWT 
 	public gcpDevice(String projectID, String region, String registryId, String deviceID, String privateKey, String privateKeyType) {
@@ -76,23 +72,85 @@ public class gcpDevice {
 		if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
 		    Security.addProvider(new BouncyCastleProvider());
 		}
-		}
+	}
 	
-	private String _CreateJWT() throws
-		NoSuchAlgorithmException, InvalidKeySpecException, 
-		InvalidKeyException, SignatureException {
-		
-		  // header: base64_encode("{\"alg\":\"ES256\",\"typ\":\"JWT\"}") + "."
-		
+	private String _CreateECJWT() throws
+	NoSuchAlgorithmException, InvalidKeySpecException, 
+	InvalidKeyException, SignatureException, IOException, NoSuchProviderException {
+	
 		String jwt_construction = "";
+		String header_payload_base64 ="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.";
+	
+		String payload_str = "{\"iat\":" + (int) this.jwt_iat
+				+ ",\"exp\":" + (int) this.jwt_exp_time
+			    + ",\"aud\":\"" + this.projectID + "\"}";		  
+	  
+		ByteArrayOutputStream payload_base64 = new ByteArrayOutputStream();
+	  
+		try {
+			UrlBase64.encode(payload_str.getBytes(),payload_base64);
+			payload_str = payload_base64.toString();
+			int trimloc = payload_str.indexOf(".");
+			if(trimloc > 0) {
+				payload_str = payload_str.substring(0,trimloc);
+			}
+			} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			}
+	  
+		jwt_construction = header_payload_base64 + payload_str;
+        
+        PrivateKey prikey;
+        Signature sig = null;
+        
+        sig = Signature.getInstance("SHA256withPLAIN-ECDSA",BouncyCastleProvider.PROVIDER_NAME);
+
+		//RSADigestSigner signer = new RSADigestSigner(new SHA256Digest());
+        //AsymmetricKeyParameter keyparam;
+        //byte[] signat = {};
 		
-		String header_payload_base64 = null;
+		try {
+			prikey = getPemPrivateKey(this.privateKey);
+	        sig.initSign(prikey);
+	        sig.update(jwt_construction.getBytes());
+		//	signer.init(true, getPemPrivateParameter(this.privateKeSy));
+		//	signer.update(jwt_construction.getBytes(), 0, jwt_construction.length());
+		//	try {
+		//	    signat = signer.generateSignature();
+		//	} catch (Exception ex) {
+		//	    throw new RuntimeException("Cannot generate RSA signature. " + ex.getMessage(), ex);
+		//	}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        byte [] signature = sig.sign();
+        
+		ByteArrayOutputStream signature_base64 = new ByteArrayOutputStream();
 		
-	    if(this.privateKeyType.equals("RSA")) {
-	    	header_payload_base64 = "eyJhbGciOiAiUlMyNTYiLCJ0eXAiOiAiSldUIn0.";
-	    } else if (this.privateKeyType.equals("EC")) {
-	    	header_payload_base64 ="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.";
-	    }
+		try {
+			//UrlBase64.encode(signat,signature_base64);	Known working.
+			UrlBase64.encode(signature,signature_base64);
+			payload_str = signature_base64.toString();
+			int trimloc = payload_str.indexOf(".");
+			if(trimloc > 0) {
+				payload_str = payload_str.substring(0,trimloc);
+			}
+			} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			}
+        
+	return jwt_construction + "." + payload_str;
+}
+	
+	private String _CreateRSAJWT() throws
+		NoSuchAlgorithmException, InvalidKeySpecException, 
+		InvalidKeyException, SignatureException, NoSuchProviderException {
+		
+		String jwt_construction = null;
+		String header_payload_base64 = "eyJhbGciOiAiUlMyNTYiLCJ0eXAiOiAiSldUIn0.";
 		
 		String payload_str = "{\"iat\":" + (int) this.jwt_iat
 					+ ",\"exp\":" + (int) this.jwt_exp_time
@@ -116,16 +174,11 @@ public class gcpDevice {
 	        
 	        PrivateKey prikey;
 	        Signature sig = null;
-	        
-		    if(this.privateKeyType.equals("RSA")) {
-		    	sig = Signature.getInstance("SHA256withRSA");
-		    } else if (this.privateKeyType.equals("EC")) {
-		    	sig = Signature.getInstance("SHA256withECDSA");
-		    }
+		    sig = Signature.getInstance("SHA256withRSA",BouncyCastleProvider.PROVIDER_NAME);
 	        
 			//RSADigestSigner signer = new RSADigestSigner(new SHA256Digest());
 	        //AsymmetricKeyParameter keyparam;
-	        byte[] signat = {};
+	        //byte[] signat = {};
 			
 			try {
 				prikey = getPemPrivateKey(this.privateKey);
@@ -143,7 +196,6 @@ public class gcpDevice {
 				e.printStackTrace();
 			}
 	        byte [] signature = sig.sign();
-	    	System.out.println(signature.length);
 	        
 			ByteArrayOutputStream signature_base64 = new ByteArrayOutputStream();
 			
@@ -159,7 +211,6 @@ public class gcpDevice {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				}
-			
 	        
 		return jwt_construction + "." + payload_str;
 	}
@@ -175,7 +226,11 @@ public class gcpDevice {
 		this.jwt_iat = (Calendar.getInstance().getTimeInMillis()/1000L);
 		this.jwt_exp_time = this.jwt_iat + this.jwt_exp_secs;
 		  try {
-			this.jwt = _CreateJWT();
+			if(this.privateKeyType.equals("RSA")) {
+				this.jwt = _CreateRSAJWT();
+			} else if (this.privateKeyType.equals("EC")) {
+				this.jwt = _CreateECJWT();
+			}  
 		} catch (InvalidKeyException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -186,6 +241,12 @@ public class gcpDevice {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -201,22 +262,8 @@ public class gcpDevice {
 	*/
 	public String createJWT(int exp_in_secs) {
 		this.jwt_exp_secs = exp_in_secs;
-		  try {
-			jwt = _CreateJWT();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		  return jwt;
+		jwt = createJWT();
+		return jwt;
 	}
 	
 	
@@ -309,7 +356,7 @@ public class gcpDevice {
 	    }
 		throw new Exception("NO VALID KEY SET");
 	}
-	
+	/*
 	private static AsymmetricKeyParameter getPemPrivateParameter(String mKey) throws Exception {
 	    PEMParser pemParser = new PEMParser(new StringReader(mKey));
 	    final PEMKeyPair pemKeyPair = (PEMKeyPair) pemParser.readObject();
@@ -317,4 +364,6 @@ public class gcpDevice {
 	    return privKey;
 
 	}
+	*/
+
 }
