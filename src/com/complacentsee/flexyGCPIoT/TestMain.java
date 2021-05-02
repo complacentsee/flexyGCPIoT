@@ -13,8 +13,12 @@
  * limitations under the License.
  *****************************************************************************/
 package com.complacentsee.flexyGCPIoT;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-import java.util.Random;
 
 public class TestMain {
     
@@ -68,16 +72,70 @@ public class TestMain {
     	device = new gcpDevice(projectID,region,registryId,deviceId,privateECKey,"EC");	
     	jwt = device.createJWT();
     	System.out.println(jwt);
-    	
-        }
-
-    public static void main(String[] args) {
-  
-        for (int i = 1; i <= 1; ++i) {
-            TestMain t = new TestMain();
-            t.runTest();
-        }
-    	
     }
+    
+    public static void main(String[] args) {
+    	String projectID = args[0];
+    	String region = args[1];
+    	String registryId = args[2];
+    	String deviceId = args[3];
+    	String privateKeyType = args[4];
+    	String privateKey= args[5];
+
+    	gcpDevice device = new gcpDevice(projectID,region,registryId,deviceId,privateKey,privateKeyType);	
+    	String jwt = device.createJWT();
+    	System.out.println(jwt);
+    	
+    	 String topic        = device.getStateTopic();
+    	 String content      = "Connected";
+    	 int qos             = 1;
+    	 String broker       = "ssl://mqtt.googleapis.com:443";
+    	 String clientId     = device.getClientId();
+    	 System.out.println(clientId);
+    	 MemoryPersistence persistence = new MemoryPersistence();
+    	 String hackjwt = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MTk4MzI2NDYsImV4cCI6MTYxOTkxOTA0NiwiYXVkIjoiZ3JhZmFuYS1mcmVlbmFzLWNvbXBsYWNlbnRzZWUifQ.v2BDTBVRigI3s2J2nZzUSDAFwSpDBRTlOktUXFhu77r6Ux1YTUwPLEGq44IWsH_PBgrezAbLlWyCJGiqtbRA-g";
+
+    	 try {
+    	     MqttClient sampleClient = new MqttClient(broker, clientId, persistence);
+    	     MqttConnectOptions connOpts = new MqttConnectOptions();
+    	     connOpts.setUserName(deviceId);
+    	     connOpts.setPassword(jwt.toCharArray());
+    	     connOpts.setCleanSession(true);
+    	     connOpts.getDebug();
+    	     
+    	     System.out.println("Connecting to broker: "+broker);
+    	     sampleClient.connect(connOpts);
+    	     System.out.println("Connected");
+    	     System.out.println("Publishing message: "+content);
+    	     MqttMessage message = new MqttMessage(content.getBytes());
+    	     message.setQos(qos);
+    	     sampleClient.subscribe(device.getConfigTopic());
+    	     sampleClient.publish(topic, message);
+    	     for (int i = 0; i < 10; i++) {
+    	    	 System.out.println(i);
+    	    	 String msgstr = "fake";
+    	    	 MqttMessage msg = new MqttMessage(msgstr.getBytes());
+        	     msg.setQos(qos);
+        	     sampleClient.publish(device.getEventsTopic(), msg);
+    	     }
+    	     System.out.println("Message published");
+    	     if(!sampleClient.isConnected()) {
+        	     sampleClient.disconnect();
+        	     System.exit(0);
+    	     } else {
+        	     System.exit(-1);
+    	     }
+
+    	 } catch(MqttException me) {
+    	     System.out.println("reason "+me.getReasonCode());
+    	     System.out.println("msg "+me.getMessage());
+    	     System.out.println("loc "+me.getLocalizedMessage());
+    	     System.out.println("cause "+me.getCause());
+    	     System.out.println("excep "+me);
+    	     me.printStackTrace();
+    	     System.exit(-1);
+    	    }
+    }
+
 
 }

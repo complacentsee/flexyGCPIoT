@@ -1,4 +1,4 @@
-<project name="com.complacentsee.flexyGCPIoT.gcpDevice" default="run">
+<project name="com.complacentsee.flexyGCPIoT.gcpDevice" default="buildjar">
 	
 	<!-- ########  Type your Application/Flexy Parameters ######## -->
 	
