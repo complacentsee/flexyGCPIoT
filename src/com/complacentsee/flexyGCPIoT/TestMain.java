@@ -123,7 +123,7 @@ public class TestMain {
         	     sampleClient.publish(device.getEventsTopic(), msg);
     	     }
     	     System.out.println("Message published");
-    	     if(!sampleClient.isConnected()) {
+    	     if(sampleClient.isConnected()) {
         	     sampleClient.disconnect();
         	     System.exit(0);
     	     } else {
