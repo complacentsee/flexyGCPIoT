@@ -1,0 +1,103 @@
+<project name="com.complacentsee.flexyGCPIoT.gcpDevice" default="buildjar">
+	
+	<!-- ########  Type your Application/Flexy Parameters ######## -->
+	
+	<!-- The project name -->
+	<property name="ProjectName" value="com.complacentsee.flexyGCPIoT"/>
+	
+	<!-- The main class to run (where the main function is) -->
+	<property name="MainClass" value="main"/>
+	
+	<!-- The JAVA heapsize -->
+	<property name="HeapSize" value="25M"/>
+	
+	
+    <property name="src.dir" value="src/com/complacentsee/flexyGCPIoT"/>
+    <property name="test.dir" value="test"/>
+    <property name="projectHome" location="." />
+	<property name="build" location="build"/>
+	
+	<path id="build.classpath">
+	  <fileset dir="lib">
+	    <include name="**/*.jar"/>
+	  </fileset>
+	</path>
+	
+   	<path id = "classpath.test">
+      	<pathelement location = "lib/org.junit_4.13.0.v20200204-1500.jar" />
+      	<pathelement location = "${test.dir}" />
+      	<pathelement location = "${src.dir}" />
+      	<path refid = "classpath.base" />
+   	</path>
+	
+  	<target name="init" depends="clean">
+		<!-- Create the time stamp -->
+		<tstamp/>
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}"/>
+  	</target>
+
+  	<target name="compile" depends="init"
+		description="compile the source">
+		<!-- Compile the Java code from ${src} into ${build} -->
+		<javac destdir="${build}">
+  	    	<src path="${src.dir}"/>
+  	    	<classpath refid="build.classpath"/>
+  	  	</javac>
+  	</target>
+
+  	<target name="clean"
+		description="clean up">
+		<delete dir="${build}"/>
+		<delete dir="jar"/>
+		<delete dir="report"/>
+  	</target>
+	
+    <target name="buildjar" depends="compile">
+    	<pathconvert property="mf.classpath" pathsep=" ">
+          <path refid="build.classpath" />
+          <flattenmapper />
+    	</pathconvert>
+    	<copy todir="jar">
+    	  <fileset dir="lib">
+    	    <exclude name="junit*" />
+    	    <include name="*.jar"/>
+    	    <include name="*.zip"/>
+    	  </fileset>
+    	</copy>
+    	<mkdir dir="jar"/>
+        <jar destfile="jar/${ProjectName}.jar" basedir="${build}">
+            <manifest>
+                <attribute name="Main-Class" value="com.complacentsee.flexyGCPIoT.Sample"/>
+            	<attribute name="Class-Path" value="${mf.classpath}"/>
+            </manifest>
+        </jar>
+    </target>
+	
+	
+	<target name="test_gcpDevice" >
+
+	  <junit printsummary="yes" haltonfailure="yes">
+
+	    <classpath>
+	      <pathelement location="${project.class.path}"/>
+	      <pathelement location="${build.tests}"/>
+	      <pathelement path="${java.class.path}"/>
+	    </classpath>
+
+	    <test name="gcpDeviceTest"
+	             haltonfailure="no" outfile="result">
+
+	      <formatter type="plain"/>
+	      <formatter type="xml"/>
+
+	    </test>
+
+	  </junit>
+	</target>
+	
+    <target name="run" depends="buildjar">
+        <java jar="jar/${ProjectName}.jar" fork="true"/>
+    </target>
+	
+</project>
