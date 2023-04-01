@@ -54,10 +54,9 @@ public class gcpDevice {
 		this.deviceId = deviceID;
 		this.privateKey = privateKey;
 		this.privateKeyType = "RSA";
-		
-		if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-		    Security.addProvider(new BouncyCastleProvider());
-		}
+
+		SecureRandom secureRandom = new SecureRandom(new org.bouncycastle.crypto.prng.FixedSecureRandom("your seed".getBytes()));
+		Security.insertProviderAt(new BouncyCastleProvider(), 1);
 	}
 	
 	//Constructor for gcpJWT 
